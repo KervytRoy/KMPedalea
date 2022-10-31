@@ -1,0 +1,128 @@
+﻿@page "/"
+@using KMPedalea.Shared.Models
+@inject HttpClient Http;
+@inject IJSRuntime JS;
+@inject NavigationManager Nav;
+<!-- Button trigger modal -->
+<div class="row justify-content-center">
+    <div class="col-3">
+        <button type="button" @onclick=@(() => ShowModal("exampleModal")) class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#exampleModal">
+            Abrir Lista de Productos
+        </button>
+    </div>
+</div>
+<br />
+<br />
+<div class="alert alert-primary" role="alert">
+    <h5>Detalles del Pedido</h5>
+</div>
+<br />
+<!-- Tabla de Pedidos -->
+<table class="table">
+    <thead>
+        <tr>
+            <th scope="col">Nombre</th>
+            <th scope="col">Cantidad</th>
+            <th scope="col">Total</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var detallePedido in detallesPedido)
+        {
+            <tr>
+                <td>@detallePedido.NombreProducto</td>
+                <td>@detallePedido.Cantidad</td>
+                <td>@detallePedido.Total</td>
+            </tr>
+
+        }
+        <tr>
+            <td>Total Pedido= @totalPedido</td>
+        </tr>
+    </tbody>
+</table>
+<div class="row justify-content-end">
+    <div class="col-3">
+        <button type="button" @onclick=@(() => CrearPedido()) class="btn btn-primary">
+            Crear Pedido
+        </button>
+    </div>
+</div>
+<!-- Modal -->
+<div class="modal fade show" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" style="display:none; background: #00000080;" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="exampleModalLabel">Lista de Productos</h5>
+                <button type="button" @onclick=@(() => HideModal("exampleModal")) class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <MostrarProductos OnSelectProduct="OnSelectProduct"></MostrarProductos>
+            </div>
+            <div class="modal-footer">
+                <button type="button" @onclick=@(() => HideModal("exampleModal")) class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+@code {
+    private IJSObjectReference module;
+    private List<DetallePedido> detallesPedido = new();
+    private decimal totalPedido;
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            module = await JS.InvokeAsync<IJSObjectReference>("import", "./Pages/Index.razor.js");
+        }
+    }
+    private void OnSelectProduct(Product product)
+    {
+        totalPedido = 0;
+        if (detallesPedido.Any((d) => d.IdProducto == product.Id))
+        {
+            detallesPedido.Remove(detallesPedido.First((d) => d.IdProducto == product.Id));
+        }
+        DetallePedido detallePedido = new()
+            {
+                IdProducto = product.Id,
+                Total = product.Cantidad * product.Price,
+                Cantidad = product.Cantidad,
+                NombreProducto = product.Name
+            };
+        detallesPedido.Add(detallePedido);
+        foreach (var detalle in detallesPedido)
+        {
+            totalPedido += detalle.Total;
+        }
+        Task.Run(async () => await HideModal("exampleModal"));
+    }
+    private async Task ShowModal(string elementId)
+    {
+        if (module is not null)
+        {
+            await module.InvokeAsync<string>("showModal", elementId);
+        }
+    }
+    private async Task HideModal(string elementId)
+    {
+        if (module is not null)
+        {
+            await module.InvokeAsync<string>("hideModal", elementId);
+        }
+    }
+    private async Task CrearPedido()
+    {
+        int idPedido;
+        var response = await Http.PostAsJsonAsync<decimal>("api/pedidos", totalPedido);
+        var content = response.Content.ReadAsStringAsync();
+        idPedido = Int32.Parse(content.Result);
+
+        foreach (var detalle in detallesPedido)
+        {
+            detalle.IdPedido = idPedido;            
+        }
+        var responseDetalle = await Http.PostAsJsonAsync<List<DetallePedido>>("api/pedidos/detalle", detallesPedido);
+        Nav.NavigateTo("pedidos");
+    }
+}

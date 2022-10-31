@@ -1,0 +1,64 @@
+﻿@page "/pedidos"
+@inject HttpClient Http;
+@inject NavigationManager Nav;
+@using KMPedalea.Shared.Models
+<div class="alert alert-primary" role="alert">
+    <h5>Pedidos Realizados</h5>
+</div>
+<br />
+<!-- Tabla de Pedidos -->
+<table class="table">
+    <thead>
+        <tr>
+            <th scope="col">Id Pedido</th>
+            <th scope="col">Productos del Pedido</th>
+            <th scope="col">Total</th>
+            <th scope="col">Acción</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var pedido in pedidos)
+        {
+            string detallePedido = string.Empty;
+            foreach (var detalle in detallesPedido)
+            {
+                if (detalle.IdPedido == pedido.Id)
+                {
+                    detallePedido += $"{detalle.NombreProducto}(Cantidad({detalle.Cantidad}), Total({detalle.Total})), ";
+                }                
+            }
+            <tr>
+                <td>@pedido.Id</td>
+                <td>@detallePedido</td>
+                <td>@pedido.Total</td>
+                <td>
+                    <button @onclick=@(()=> EliminarPedido(pedido.Id)) class="btn btn-danger">Eliminar</button>
+                </td>
+            </tr>
+
+        }
+    </tbody>
+</table>
+@code {
+    private List<Pedido> pedidos = new();
+    private List<DetallePedido> detallesPedido = new();
+    protected override async Task OnInitializedAsync()
+    {
+        pedidos = await Http.GetFromJsonAsync<List<Pedido>>("api/pedidos");
+        if (pedidos.Count > 0)
+        {
+            foreach (var pedido in pedidos)
+            {
+                var response = await Http.GetFromJsonAsync<List<DetallePedido>>($"api/detallespedido/{pedido.Id}");
+                detallesPedido.AddRange(response);
+
+            }
+        }        
+    }
+    private async Task EliminarPedido(int pedidoId)
+    {
+        var response = await Http.DeleteAsync($"api/pedidos/{pedidoId}");
+        StateHasChanged();
+        Nav.NavigateTo("/");
+    }
+}
