@@ -8,7 +8,12 @@ namespace KMPedalea.Server.Controllers
     [ApiController]
     public class ProductosController : ControllerBase
     {
-        private DBService _dbService = new DBService();        
+        private readonly IDBService _dbService;
+
+        public ProductosController(IDBService dbService)
+        {
+            _dbService = dbService;
+        }
 
         [HttpGet]
         public IEnumerable<Product> Get()

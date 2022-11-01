@@ -4,7 +4,7 @@ using System.Data;
 
 namespace KMPedalea.Server.Services
 {
-    public class DBService
+    public class DBService : IDBService
     {
         private string connectionString = "Data Source=DESKTOP-FJBQ9H9; Initial Catalog=PedaleaDB; User=sa; Password=175390513";
 

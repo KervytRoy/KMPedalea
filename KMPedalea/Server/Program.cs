@@ -1,3 +1,4 @@
+using KMPedalea.Server.Services;
 using Microsoft.AspNetCore.ResponseCompression;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -6,7 +7,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllersWithViews();
 builder.Services.AddRazorPages();
-
+builder.Services.AddTransient<IDBService, DBService>();
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.

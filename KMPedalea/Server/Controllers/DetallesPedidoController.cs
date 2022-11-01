@@ -8,8 +8,12 @@ namespace KMPedalea.Server.Controllers
     [ApiController]
     public class DetallesPedidoController : ControllerBase
     {
-        private DBService _dbService = new DBService();
+        private readonly IDBService _dbService;
 
+        public DetallesPedidoController(IDBService dbService)
+        {
+            _dbService = dbService;
+        }
         [HttpGet("{pedidoId}")]
         public IEnumerable<DetallePedido> Get(int pedidoId)
         {
