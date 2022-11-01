@@ -6,7 +6,13 @@ namespace KMPedalea.Server.Services
 {
     public class DBService : IDBService
     {
-        private string connectionString = "Data Source=DESKTOP-FJBQ9H9; Initial Catalog=PedaleaDB; User=sa; Password=175390513";
+        private readonly IConfiguration _configuration;
+        private string connectionString;
+        public DBService(IConfiguration configuration)
+        {
+            _configuration = configuration;
+            connectionString = _configuration["ConnectionStrings:PedaleaDB"];
+        }
 
         public List<Product> GetProducts()
         {
